@@ -5,26 +5,49 @@
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
 
+  "mounts": [
+    "source=${localEnv:HOME}/models,target=/workspace/models,type=bind"
+  ],
+
+
   "runArgs": [
     "--cap-add=SYS_PTRACE",
     "--security-opt=seccomp=unconfined",
+    "--device=/dev/snd",
     "--device=/dev/kfd",
     "--device=/dev/dri",
     "--group-add=video",
+    "--group-add=audio",
     "--ipc=host",
-    "--shm-size=8G"
-  ],
+    "--shm-size=8G",
 
+    // PulseAudio/PipeWire Socket
+    "-v", "/run/user/1000/pulse:/run/user/1000/pulse",
+
+    // Auth Requirements for PipeWire
+    "-v", "/etc/machine-id:/etc/machine-id:ro",
+    "-v", "${localEnv:HOME}/.config/pulse/cookie:/root/.config/pulse/cookie",
+  ],
+  "containerEnv": {
+    "PULSE_SERVER": "unix:/run/user/1000/pulse/native",
+    "TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL": "1"
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y libpulse0 alsa-utils ffmpeg libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0 && /opt/venv/bin/pip install pyaudio transformers soundfile qwen_tts",
+  
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance"
       ]
-    }
+    },
+    "interpreter": {
+                "path": "/opt/venv/bin/python3.12"
+            },
+    "jetbrains": {
+            "interpreter": {
+                "path": "/opt/venv/bin/python3.12"
+            }
+        }
   },
-
-  "settings": {
-    "python.defaultInterpreterPath": "/usr/bin/python3"
-  }
 }
